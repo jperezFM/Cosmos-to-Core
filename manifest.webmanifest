@@ -1,0 +1,39 @@
+{
+  "name": "Cosmos to Core",
+  "short_name": "Cosmos to Core",
+  "id": "./",
+  "description": "Interactive NGSS and NYS Regents Earth and Space Science, from Earth's core to the edge of the universe.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "background_color": "#050914",
+  "theme_color": "#050914",
+  "orientation": "any",
+  "categories": [
+    "education"
+  ],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
