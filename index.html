@@ -564,6 +564,31 @@ body.journey.jpanel #jy-back{display:block}
 .onb-next:disabled{opacity:.4;cursor:default}
 .linkbtn{background:none;border:0;color:#ffd65a;text-decoration:underline;cursor:pointer;padding:0;font:inherit}
 @media (max-width:620px){.onb-row{grid-template-columns:1fr}.onb-body h2{font-size:26px}.onb-body{padding:4px 16px 8px}.onb-foot{padding:10px 16px}.onb-top{padding:12px 16px 0}.onb-how li{font-size:13px}.onb-k{min-width:54px}}
+
+.onb-row + .note{margin-top:8px}
+#hb-set{font-size:15px;padding:6px 11px}
+.gfx-toast{display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:min(560px,92vw)}
+.gfx-toast button.ghost{background:none;color:var(--text);border:1px solid var(--line)}
+.setdlg{width:min(620px,94vw);max-width:none}.setdlg h3{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:14px 0 6px}
+.resdlg{width:min(760px,96vw);max-width:none;max-height:94vh;overflow:auto}
+.res-top{display:flex;align-items:center;justify-content:space-between}.res-top h2{margin:0}
+.res-in{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.res-in input{flex:1;min-width:180px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:8px;padding:9px 11px;color:var(--text);font:inherit}
+.res-prev{border:1px solid var(--line);border-radius:12px;background:#fff;color:#14182a;padding:14px 16px;margin:8px 0;max-height:46vh;overflow:auto}
+.res-sheet{font-family:var(--ui);color:#14182a}
+.res-hd{display:flex;justify-content:space-between;gap:10px;border-bottom:2px solid #14182a;padding-bottom:6px;margin-bottom:10px}.res-hd b{display:block;font-size:17px}.res-hd span{font-size:13px;color:#4a5068}.res-date{font-size:12px;text-align:right}
+.res-big{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}.res-big>div{border:1px solid #d6d9e4;border-radius:10px;padding:8px 10px}.res-big b{font-size:24px;display:block}.res-big span{font-size:12px;color:#4a5068}
+.res-bar{display:block;height:6px;background:#e7e9f1;border-radius:3px;margin-top:6px;overflow:hidden}.res-bar i{display:block;height:100%;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.res-tab{width:100%;border-collapse:collapse;font-size:13px}.res-tab th,.res-tab td{border-bottom:1px solid #e2e4ec;padding:4px 6px;text-align:left}.res-tab th{font-size:11px;text-transform:uppercase;color:#4a5068}
+.res-sheet h4{margin:12px 0 4px;font-size:14px}
+.res-miss{margin:0;padding-left:18px;font-size:13px}.res-miss li{margin-bottom:6px}.res-a{color:#1f7a3a}
+.res-stds{font-size:12px;color:#4a5068;margin:2px 0}
+.res-ta{width:100%;height:140px;margin-bottom:8px}
+.res-btns{gap:8px}.res-msg{min-height:1.2em}
+.res-entry{margin:6px 0 10px;gap:10px;align-items:center}
+#res-print{display:none}
+@media print{body.print-res>*:not(#res-print){display:none!important}body.print-res{background:#fff!important}body.print-res::before{display:none}body.print-res #res-print{display:block;padding:0}.res-big{grid-template-columns:repeat(3,1fr)!important}.res-big>div,.res-tab tr,.res-miss li{break-inside:avoid}}
+@media (max-width:860px){#hb-set{padding:6px 9px}.res-big{grid-template-columns:1fr}}
+@media (max-width:420px){#lvl{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 .r-st[data-id=sun] span{transform:translateY(-8px)}.r-st[data-id=moon] span{transform:translateY(7px)}.r-st[data-id=orbit] span,.r-st[data-id=solar] span{}
@@ -2000,6 +2025,8 @@ function updateLabels() {
 function frame(now) {
   requestAnimationFrame(frame);
   if (window.__labOpen) { lastT = now; return; }
+  if (GFX.light && now - lastT < 31) return;
+  fpsTick(now);
   const dt = Math.min(0.05, (now - lastT) / 1000) || 0.016; lastT = now;
   updateWorld(dt, now); if (typeof r8Tick === 'function') r8Tick(dt);
   renderer.render(scene, camera);
@@ -2054,7 +2081,7 @@ function resizeEngine() {
 function initEngine(el) {
   canvasEl = el;
   renderer = new THREE.WebGLRenderer({ canvas: el, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.outputEncoding = THREE.sRGBEncoding; renderer.localClippingEnabled = true; renderer.setClearColor(0x03060d, 1);
+  renderer.setPixelRatio(gfxRatio()); document.body.classList.toggle('gfx-light', GFX.light); renderer.outputEncoding = THREE.sRGBEncoding; renderer.localClippingEnabled = true; renderer.setClearColor(0x03060d, 1);
   scene = new THREE.Scene(); camera = new THREE.PerspectiveCamera(45, 1, 0.05, 6000); camera.position.set(0, 0, 6);
   dirLight = new THREE.DirectionalLight(0xffffff, 1.4); scene.add(dirLight); scene.add(dirLight.target);
   ambLight = new THREE.AmbientLight(0x6f86b5, 0.45); scene.add(ambLight);
@@ -7728,7 +7755,7 @@ function clearLocal() {
 function buildLocal(P) {
   const l = LOCV.l; clearLocal(); const R = recipe(P); LOCV.place = P; LOCV.R = R;
   const k1 = R.vex / (R.F * 500), Y = e => e >= R.ec ? e * k1 : R.ec * k1 + (e - R.ec) * k1 / R.cf;
-  const N = 112, pos = [], col = [], idx = [], hgt = new Float32Array((N + 1) * (N + 1));
+  const N = GFX.light ? 72 : 112, pos = [], col = [], idx = [], hgt = new Float32Array((N + 1) * (N + 1));
   for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) { const x = -1 + 2 * i / N, n = 1 - 2 * j / N; hgt[j * (N + 1) + i] = R.h(x, n); }
   const L = new THREE.Vector3(-0.45, 0.8, 0.4).normalize();
   for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
@@ -7875,7 +7902,7 @@ function buildStory(id) {
   const k1 = R.vex / (R.F * 500), Y0 = e => e >= R.ec ? e * k1 : R.ec * k1 + (e - R.ec) * k1 / R.cf, Yi0 = y => y >= R.ec * k1 ? y / k1 : R.ec + (y - R.ec * k1) * R.cf / k1;
   const p00 = Object.assign({}, D.p0 || {}, D.chapters[0].p ? D.chapters[0].p(0) : {}); let topMax = -1e9; for (let i = -1; i <= 1; i += 0.25) for (let j = -1; j <= 1; j += 0.25) topMax = Math.max(topMax, D.h(i, j, p00), D.wl ? (D.wl(i, j, p00) ?? -1e9) : -1e9);
   const ref = (Y0(topMax) + Y0(R.base)) / 2 + 0.15, Y = e => Y0(e) - ref, Yi = y => Yi0(y + ref);
-  const N = 84, ROWS = 40, NW = N / 2;
+  const N = GFX.light ? 56 : 84, ROWS = GFX.light ? 28 : 40, NW = N / 2;
   const mkMat = (o, base, tr) => { const m = new THREE.MeshBasicMaterial(Object.assign({ vertexColors: true, side: THREE.DoubleSide }, o)); m.userData.loc = true; reg(l, m, base == null ? 1 : base, !!tr); return m; };
   const mesh = (nv, idx, mat, kind) => { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(nv * 3), 3)); if (kind !== 'water') g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(nv * 3), 3)); g.setIndex(idx); const m = new THREE.Mesh(g, mat); m.frustumCulled = false; l.group.add(m); LOCV.objs.push(m); return m; };
   const ti = []; for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const a = j * (N + 1) + i, b = a + 1, c = a + N + 1, d = c + 1; ti.push(a, c, b, b, c, d); }
@@ -9909,7 +9936,7 @@ function jSceneMount(host, st) {
 function jSceneLoop(now) {
   JSCN.raf = 0; const c = JSCN.c; if (!c || !JY.on || !c.isConnected) return;
   JSCN.raf = requestAnimationFrame(jSceneLoop);
-  const b = document.body.classList; if (b.contains('jmin') || b.contains('jpanel') || window.__labOpen || document.hidden || now - JSCN.last < 33) return; JSCN.last = now;
+  const b = document.body.classList; if (b.contains('jmin') || b.contains('jpanel') || window.__labOpen || document.hidden || now - JSCN.last < (GFX.light ? 60 : 33)) return; JSCN.last = now;
   const W = c.clientWidth, H = c.clientHeight; if (!W || !H) return; const dpr = Math.min(2, window.devicePixelRatio || 1);
   if (c.width !== Math.round(W * dpr) || c.height !== Math.round(H * dpr)) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
   const x = c.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -9921,7 +9948,7 @@ function jSceneLoop(now) {
    1) choose settings  2) choose Journey or Explore  3) how to use
    (the how-to is tailored to the mode chosen; the full guide is one tap away)
    ============================================================ */
-const ONB = { step: 0, level: LEVEL, motion: 'full', mode: null, fresh: false };
+const ONB = { step: 0, level: LEVEL, motion: 'full', mode: null, fresh: false, gfx: null };
 try { const m = localStorage.getItem('c2c-motion'); if (m) ONB.motion = m; else if (S.reduced) ONB.motion = 'reduced'; const md = localStorage.getItem('c2c-mode'); if (md) ONB.mode = md; } catch (e) { }
 function onbCard(group, val, title, desc, icon, extra) {
   const on = ONB[group] === val;
@@ -9956,7 +9983,10 @@ function onbRender() {
       h('h3', {}, 'Course level'),
       h('div', { class: 'onb-row' }, onbCard('level', 'regents', 'Regents', 'What the NYS Earth and Space Sciences Regents exam assesses.', 'R'), onbCard('level', 'honors', 'Honors', 'Everything in Regents, plus extensions that go beyond the exam.', 'H')),
       h('h3', {}, 'Motion'),
-      h('div', { class: 'onb-row' }, onbCard('motion', 'full', 'Full motion', 'Smooth camera flights, moving planets and animations.', '〰'), onbCard('motion', 'reduced', 'Reduce motion', 'Instant jumps and paused time. Easier on some eyes and slower computers.', '▢')),
+      h('div', { class: 'onb-row' }, onbCard('motion', 'full', 'Full motion', 'Smooth camera flights, moving planets and animations.', '〰'), onbCard('motion', 'reduced', 'Reduce motion', 'Instant jumps and paused time. Easier on some eyes.', '▢')),
+      h('h3', {}, 'Graphics'),
+      h('div', { class: 'onb-row' }, onbCard('gfx', 'standard', 'Standard graphics', 'The sharpest 3D views. Best on newer laptops.', '◆'), onbCard('gfx', 'light', 'Light graphics', 'Lower detail so the 3D runs smoothly on older or slower Chromebooks.', '◇')),
+      GFX.set ? '' : h('p', { class: 'note small' }, GFX.light ? 'We picked Light graphics because this looks like a smaller computer. You can change it any time with ⚙ at the top.' : 'You can change these any time with ⚙ at the top.'),
       !$('hb-teach') || $('hb-teach').hidden ? '' : h('p', { class: 'note small' }, 'You can edit this page. ', h('button', { type: 'button', class: 'linkbtn', onclick: () => openTeacherSettings() }, 'Open teacher settings'), ' to choose what students see.'));
     ONB.next.textContent = 'Continue ›'; ONB.next.disabled = false;
   } else if (ONB.step === 1) {
@@ -9971,7 +10001,7 @@ function onbRender() {
   } else {
     const full = h('details', { class: 'acc onb-full' }, h('summary', {}, 'Full guide to every feature'), h('div', { html: ($('help') && $('help').querySelector('ul')) ? $('help').querySelector('ul').outerHTML : '' }));
     b.append(h('h2', {}, ONB.mode === 'journey' ? 'How the Journey works' : 'How to explore'), onbHowTo(ONB.mode), full,
-      h('p', { class: 'note small' }, 'You can see this guide again from the How to use button (?) at the top.'));
+      h('p', { class: 'note small' }, 'You can see this guide again from the How to use button (?) at the top. ⚙ changes your settings.'));
     ONB.next.textContent = ONB.mode === 'journey' ? 'Start the Journey ›' : 'Start exploring ›'; ONB.next.disabled = false;
   }
   b.scrollTop = 0; d.querySelector('.onb-body').scrollTop = 0;
@@ -9980,14 +10010,16 @@ function onbFinish() {
   try { localStorage.setItem('c2c-motion', ONB.motion); localStorage.setItem('c2c-mode', ONB.mode); } catch (e) { }
   ONB.dlg.close(); ONB.dlg.remove(); ONB.dlg = null; document.body.classList.remove('onb-open');
   if (ONB.mode === 'journey') jStart(ONB.fresh ? 0 : undefined); else if (JY.on) jExit();
+  if (typeof fpsWatch === 'function') setTimeout(fpsWatch, 2500);
 }
 function onbApply() {
   if (ONB.level !== LEVEL) setLevel(ONB.level);
+  setGfx(ONB.gfx === 'light');
   S.reduced = ONB.motion === 'reduced'; S.play = !S.reduced; if (typeof syncTime === 'function') syncTime();
   document.body.classList.toggle('reduced', S.reduced);
 }
 function openOnboarding() {
-  if (ONB.dlg) return; ONB.step = 0; ONB.level = LEVEL;
+  if (ONB.dlg) return; ONB.step = 0; ONB.level = LEVEL; ONB.gfx = GFX.light ? 'light' : 'standard';
   const body = h('div', {}), dots = h('div', { class: 'onb-dots', 'aria-hidden': 'true' }, h('i'), h('i'), h('i'));
   const back = h('button', { type: 'button', class: 'btn ghost', onclick: () => { ONB.step = Math.max(0, ONB.step - 1); onbRender(); } }, '‹ Back');
   const next = h('button', { type: 'button', class: 'btn onb-next', onclick: () => { if (ONB.step === 0) onbApply(); if (ONB.step < 2) { ONB.step++; onbRender(); } else onbFinish(); } }, 'Continue ›');
@@ -9996,6 +10028,139 @@ function openOnboarding() {
   document.body.append(d); Object.assign(ONB, { dlg: d, body, dots, back, next });
   document.body.classList.add('onb-open'); onbRender(); d.showModal(); setTimeout(() => next.focus(), 50);
 }
+
+/* ============================================================
+   ROUND 14a — LIGHT GRAPHICS for older Chromebooks
+   Light: lower render resolution, 30 fps cap, coarser 3D blocks,
+   slower journey-scene animation. Also a frame-rate watchdog that
+   offers Light mode if the computer is struggling, and a Settings dialog.
+   ============================================================ */
+const GFX = { light: false, set: false };
+try { const g = localStorage.getItem('c2c-gfx'); if (g) { GFX.light = g === 'light'; GFX.set = true; } } catch (e) { }
+if (!GFX.set) { const cores = navigator.hardwareConcurrency || 8, mem = navigator.deviceMemory || 8; GFX.light = cores <= 4 || mem <= 4; }
+function gfxRatio() { const d = window.devicePixelRatio || 1; return GFX.light ? Math.min(d, 1) * 0.7 : Math.min(d, 1.75); }
+function setGfx(light, save) {
+  GFX.light = !!light; if (save !== false) { GFX.set = true; try { localStorage.setItem('c2c-gfx', GFX.light ? 'light' : 'standard'); } catch (e) { } }
+  if (typeof renderer !== 'undefined' && renderer) { renderer.setPixelRatio(gfxRatio()); resizeEngine(); }
+  document.body.classList.toggle('gfx-light', GFX.light);
+}
+/* frame-rate watchdog: after the start screen, measure for a few seconds */
+const FPSW = { on: false, t0: 0, n: 0, asked: false };
+function fpsWatch() { if (GFX.light || FPSW.asked) return; FPSW.on = true; FPSW.t0 = 0; FPSW.n = 0; }
+function fpsTick(now) {
+  if (!FPSW.on || document.hidden || window.__labOpen) return;
+  if (!FPSW.t0) { FPSW.t0 = now; FPSW.n = 0; return; }
+  FPSW.n++; const el = now - FPSW.t0;
+  if (el > 6000) { FPSW.on = false; const fps = FPSW.n / (el / 1000); if (fps < 22) gfxOffer(fps); }
+}
+function gfxOffer(fps) {
+  FPSW.asked = true; if ($('gfx-toast')) return;
+  const t = h('div', { id: 'gfx-toast', class: 'app-toast gfx-toast', role: 'status' }, h('span', {}, 'This computer seems to be struggling with the 3D views. Switch to ', h('b', {}, 'Light graphics'), ' for smoother motion?'),
+    h('button', { type: 'button', onclick: () => { setGfx(true); t.remove(); } }, 'Switch'), h('button', { type: 'button', class: 'ghost', onclick: () => t.remove() }, 'No thanks'));
+  document.body.append(t);
+}
+/* Settings dialog (reachable any time from the header) */
+function openSettings() {
+  let d = $('settings'); if (d) d.remove();
+  const body = h('div', {});
+  const draw = () => {
+    body.innerHTML = '';
+    const card = (on, title, desc, fn) => h('button', { type: 'button', class: 'onb-card' + (on ? ' on' : ''), 'aria-pressed': on ? 'true' : 'false', onclick: () => { fn(); draw(); } }, h('b', {}, title), h('span', {}, desc));
+    body.append(h('h3', {}, 'Course level'), h('div', { class: 'onb-row' }, card(LEVEL === 'regents', 'Regents', 'What the Regents exam assesses.', () => setLevel('regents')), card(LEVEL === 'honors', 'Honors', 'Adds extensions beyond the exam.', () => setLevel('honors'))),
+      h('h3', {}, 'Motion'), h('div', { class: 'onb-row' }, card(!S.reduced, 'Full motion', 'Smooth flights and animations.', () => { ONB.motion = 'full'; onbApplyMotion(); }), card(S.reduced, 'Reduce motion', 'Instant jumps, paused time.', () => { ONB.motion = 'reduced'; onbApplyMotion(); })),
+      h('h3', {}, 'Graphics'), h('div', { class: 'onb-row' }, card(!GFX.light, 'Standard graphics', 'Sharpest 3D views.', () => setGfx(false)), card(GFX.light, 'Light graphics', 'Smoother on older or slower Chromebooks.', () => setGfx(true))));
+  };
+  draw();
+  d = h('dialog', { id: 'settings', class: 'setdlg' }, h('h2', {}, 'Settings'), body, h('div', { class: 'row', style: 'margin-top:14px' }, btn('Done', () => d.close())));
+  d.addEventListener('close', () => d.remove()); document.body.append(d); d.showModal();
+}
+function onbApplyMotion() { S.reduced = ONB.motion === 'reduced'; S.play = !S.reduced; if (typeof syncTime === 'function') syncTime(); document.body.classList.toggle('reduced', S.reduced); try { localStorage.setItem('c2c-motion', ONB.motion); } catch (e) { } }
+(() => {   // header gear button
+  const b = h('button', { class: 'hbtn', id: 'hb-set', type: 'button', title: 'Settings: level, motion and graphics', 'aria-label': 'Settings', onclick: openSettings }, '⚙');
+  const help = $('hb-help'); if (help && help.parentNode) help.parentNode.insertBefore(b, help);
+})();
+
+/* ============================================================
+   ROUND 14b — MY RESULTS: a summary students can hand in
+   (Journey stops visited, check questions, what to review,
+   standards marked done). Copy as text, download, or save as PDF.
+   ============================================================ */
+function resData() {
+  const N = J_STOPS.length, seen = J_STOPS.filter(s => JY.seen[s.id]), ans = J_STOPS.filter(s => JY.ans[s.id] != null), ok = ans.filter(s => JY.ans[s.id] === true);
+  const eras = J_ERAS.map(([k, n]) => { const L = J_STOPS.filter(s => s.era === k); return { n, total: L.length, seen: L.filter(s => JY.seen[s.id]).length, ans: L.filter(s => JY.ans[s.id] != null).length, ok: L.filter(s => JY.ans[s.id] === true).length }; });
+  const miss = ans.filter(s => JY.ans[s.id] === false).map(s => ({ title: s.title, when: s.when, q: s.q.q, a: s.q.o[s.q.a], why: s.q.why, i: J_STOPS.indexOf(s) }));
+  const notSeen = J_STOPS.filter(s => !JY.seen[s.id]).map(s => s.title);
+  const stds = (typeof STANDARDS !== 'undefined' ? STANDARDS : []).filter(s => PROG[s.id]).map(s => `${s.id} ${s.short}`);
+  return { N, seen: seen.length, ans: ans.length, ok: ok.length, eras, miss, notSeen, stds, stdTotal: (typeof STANDARDS !== 'undefined' ? STANDARDS.length : 19) };
+}
+function resName() { try { return localStorage.getItem('c2c-name') || ''; } catch (e) { return ''; } }
+function resText(D, name, per) {
+  const L = [], pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '—';
+  L.push('COSMOS TO CORE: MY RESULTS', `Name: ${name || '(not entered)'}${per ? '   Class/period: ' + per : ''}`, `Date: ${new Date().toLocaleString()}`, `Level: ${LEVEL === 'honors' ? 'Honors' : 'Regents'}`, '');
+  L.push(`JOURNEY THROUGH TIME`, `Stops visited: ${D.seen} of ${D.N} (${pct(D.seen, D.N)})`, `Check questions right on the first try: ${D.ok} of ${D.ans} answered (${pct(D.ok, D.ans)})`, '');
+  L.push('BY ERA (visited / right on first try of answered)'); D.eras.forEach(e => L.push(`  ${e.n}: ${e.seen}/${e.total} visited, ${e.ok}/${e.ans} right`)); L.push('');
+  L.push('TO REVIEW (missed on the first try)'); if (!D.miss.length) L.push('  None'); D.miss.forEach(m => L.push(`  • ${m.title} (${m.when})`, `    Q: ${m.q}`, `    Answer: ${m.a}`)); L.push('');
+  L.push(`STANDARDS MARKED DONE: ${D.stds.length} of ${D.stdTotal}`); D.stds.forEach(s => L.push('  ✓ ' + s)); L.push('');
+  if (D.notSeen.length) { L.push(`STOPS NOT VISITED YET (${D.notSeen.length})`); L.push('  ' + D.notSeen.join('; ')); }
+  return L.join('\n');
+}
+function resView(D, name, per) {
+  const pct = (a, b) => b ? Math.round(100 * a / b) : 0;
+  const bar = (v, c) => h('span', { class: 'res-bar' }, h('i', { style: `width:${v}%;background:${c}` }));
+  return h('div', { class: 'res-sheet' },
+    h('div', { class: 'res-hd' }, h('div', {}, h('b', {}, 'Cosmos to Core: my results'), h('span', {}, `${name || 'Name not entered'}${per ? ' · ' + per : ''}`)), h('span', { class: 'res-date' }, new Date().toLocaleDateString(), ' · ', LEVEL === 'honors' ? 'Honors' : 'Regents')),
+    h('div', { class: 'res-big' },
+      h('div', {}, h('b', {}, `${D.seen}/${D.N}`), h('span', {}, 'Journey stops visited'), bar(pct(D.seen, D.N), '#ffd65a')),
+      h('div', {}, h('b', {}, D.ans ? `${pct(D.ok, D.ans)}%` : '—'), h('span', {}, `right on the first try (${D.ok} of ${D.ans})`), bar(pct(D.ok, D.ans), '#8be39a')),
+      h('div', {}, h('b', {}, `${D.stds.length}/${D.stdTotal}`), h('span', {}, 'standards marked done'), bar(pct(D.stds.length, D.stdTotal), '#7fd0ff'))),
+    h('table', { class: 'res-tab' }, h('thead', {}, h('tr', {}, h('th', {}, 'Era'), h('th', {}, 'Visited'), h('th', {}, 'Right on first try'))),
+      h('tbody', {}, D.eras.map(e => h('tr', {}, h('td', {}, e.n), h('td', {}, `${e.seen} / ${e.total}`), h('td', {}, e.ans ? `${e.ok} / ${e.ans}` : '—'))))),
+    h('h4', {}, `To review (${D.miss.length})`),
+    D.miss.length ? h('ul', { class: 'res-miss' }, D.miss.map(m => h('li', {}, h('b', {}, m.title), ` (${m.when})`, h('div', {}, m.q), h('div', { class: 'res-a' }, 'Answer: ' + m.a)))) : h('p', { class: 'note' }, D.ans ? 'Nothing: every answered question was right on the first try.' : 'No check questions answered yet.'),
+    D.stds.length ? h('div', {}, h('h4', {}, 'Standards marked done'), h('p', { class: 'res-stds' }, D.stds.join(' · '))) : '',
+    D.notSeen.length && D.notSeen.length < D.N ? h('div', {}, h('h4', {}, `Not visited yet (${D.notSeen.length})`), h('p', { class: 'res-stds' }, D.notSeen.join(' · '))) : '');
+}
+function openResults() {
+  let d = $('results'); if (d) d.remove();
+  let per = ''; try { per = localStorage.getItem('c2c-period') || ''; } catch (e) { }
+  const nm = h('input', { type: 'text', value: resName(), placeholder: 'First and last name', 'aria-label': 'Your name', maxlength: 60 });
+  const pr = h('input', { type: 'text', value: per, placeholder: 'Class or period (optional)', 'aria-label': 'Class or period', maxlength: 40 });
+  const prev = h('div', { class: 'res-prev' }), msg = h('p', { class: 'note small res-msg', 'aria-live': 'polite' });
+  const draw = () => { prev.innerHTML = ''; prev.append(resView(resData(), nm.value.trim(), pr.value.trim())); try { localStorage.setItem('c2c-name', nm.value.trim()); localStorage.setItem('c2c-period', pr.value.trim()); } catch (e) { } };
+  nm.addEventListener('input', draw); pr.addEventListener('input', draw);
+  const txt = () => resText(resData(), nm.value.trim(), pr.value.trim());
+  const copy = async () => { try { await navigator.clipboard.writeText(txt()); msg.textContent = 'Copied. Paste it into your Google Classroom assignment or a doc.'; } catch (e) { const ta = h('textarea', { class: 'res-ta' }); ta.value = txt(); prev.prepend(ta); ta.select(); msg.textContent = 'Press Ctrl+C to copy the selected text.'; } };
+  const dl = () => { const fn = `cosmos-results-${(nm.value.trim() || 'student').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.txt`, u = URL.createObjectURL(new Blob([txt()], { type: 'text/plain' })), a = h('a', { href: u, download: fn }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000); msg.textContent = `Saved ${fn} to your Downloads.`; };
+  const pdf = () => { const pv = h('div', { id: 'res-print' }, resView(resData(), nm.value.trim(), pr.value.trim())); document.body.append(pv); document.body.classList.add('print-res'); const done = () => { document.body.classList.remove('print-res'); pv.remove(); window.removeEventListener('afterprint', done); }; window.addEventListener('afterprint', done); window.print(); setTimeout(() => { if (document.body.classList.contains('print-res')) done(); }, 60000); msg.textContent = 'In the print window, choose “Save as PDF” as the destination.'; };
+  if (!nm.value) msg.textContent = 'Type your name so your teacher knows whose results these are.';
+  d = h('dialog', { id: 'results', class: 'resdlg' }, h('div', { class: 'res-top' }, h('h2', {}, 'My results'), h('button', { type: 'button', class: 'lab-x', 'aria-label': 'Close', onclick: () => d.close() }, '✕')),
+    h('p', { class: 'note' }, 'A summary of your work on this device. Hand it in by copying it, downloading it, or saving it as a PDF.'),
+    h('div', { class: 'res-in' }, nm, pr), prev,
+    h('div', { class: 'row res-btns' }, btn('Copy as text', copy), btn('Save as PDF', pdf, 'ghost'), btn('Download .txt', dl, 'ghost')), msg);
+  d.addEventListener('close', () => d.remove()); document.body.append(d); draw(); d.showModal(); if (!nm.value) setTimeout(() => nm.focus(), 50);
+}
+/* entry points: Journey card, Journey list and finish, Practice tab, header */
+(() => {
+  const _jb = jBuild;
+  jBuild = function () {
+    const had = !!JY.el, el = _jb.apply(this, arguments);
+    if (!had && el) { const head = el.querySelector('.jy-head'), mn = head && head.querySelector('.jy-minb'); if (mn) head.insertBefore(h('button', { type: 'button', class: 'jy-ic jy-resb', title: 'My results: hand in your progress', 'aria-label': 'My results', onclick: openResults }, '✓'), mn); }
+    return el;
+  };
+  const _jr = jRender;
+  jRender = function () {
+    _jr.apply(this, arguments);
+    const b = JY.body; if (!b) return;
+    if (JY.toc) { const h3 = b.querySelector('.jy-toch'); if (h3) h3.after(h('div', { class: 'jy-row' }, btn('My results (hand in your progress)', openResults))); }
+    const sum = b.querySelector('.jy-sum .jy-row'); if (sum) sum.prepend(btn('Hand in my results', openResults));
+  };
+  const _rp = renderPanel;
+  renderPanel = function () {
+    const r = _rp.apply(this, arguments);
+    try { if (curTab === 'practice' && !detailId) { const body = $('pbody'); if (body && !body.querySelector('.res-entry')) { const x = h('div', { class: 'row res-entry' }, btn('My results', openResults, 'ghost'), h('span', { class: 'small' }, 'Journey progress, check questions and standards, ready to hand in')); const t = body.querySelector('h2'); if (t) t.after(x); else body.prepend(x); } } } catch (e) { }
+    return r;
+  };
+})();
 
 /* ---------- init ---------- */
 async function main() {

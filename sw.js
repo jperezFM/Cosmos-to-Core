@@ -1,5 +1,5 @@
 /* Cosmos to Core service worker: makes the app work offline. */
-const VERSION = 'c2c-b1d8967b09';
+const VERSION = 'c2c-0b6cad9ba3';
 const ASSETS = [
  "apple-touch-icon.png",
  "config.js",
